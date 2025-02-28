@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using rest_api_veterinaria.AuthModule;
 using rest_api_veterinaria.Models;
 using rest_api_veterinaria.Models.Requests;
 
@@ -6,15 +8,18 @@ namespace rest_api_veterinaria.Controllers;
 
 [ApiController]
 [Route("[controller]")]
+[Authorize]
 public class VeterinariaController : ControllerBase
 {
+    private readonly JWTHelper _authHelper;
     private readonly ILogger<VeterinariaController> _logger;
     private readonly VeterinariaHelper _helper;
 
-    public VeterinariaController(ILogger<VeterinariaController> logger, VeterinariaHelper helper)
+    public VeterinariaController(ILogger<VeterinariaController> logger, VeterinariaHelper helper, JWTHelper authHelper)
     {
         _logger = logger;
         _helper = helper;
+        _authHelper = authHelper;
     }
 
     // Obtener todas las citas
@@ -29,6 +34,7 @@ public class VeterinariaController : ControllerBase
     [HttpGet("citas/{id}")]
     public IActionResult GetCitaPorId(int id)
     {
+        string user = _authHelper.GetUser(User.Claims);
         var cita = _helper.GetCitaPorId(id);
         if (cita == null)
         {
@@ -41,12 +47,18 @@ public class VeterinariaController : ControllerBase
     [HttpPost("citas")]
     public IActionResult CrearCita([FromBody] CrearCitaReq cita)
     {
-        if (cita == null)
+        string user = _authHelper.GetUser(User.Claims);
+        if (user == "user")
         {
-            return BadRequest("Datos inválidos.");
+            return Unauthorized(new { message = "No tienes permisos para realizar esta acción" });
         }
-        var citaId = _helper.CrearCita(cita);
-        return CreatedAtAction(nameof(GetCitaPorId), new { id = citaId }, cita); // Devuelve un 201 con la URL de la nueva cita
+        else if (user == "admin")
+        {
+            var id = _helper.CrearCita(cita);
+            return Ok(id);
+        }
+        return Unauthorized(new { message = "No es un usuario válido" });
+
     }
 
     // Editar una cita existente

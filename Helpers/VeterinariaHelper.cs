@@ -8,7 +8,6 @@ using rest_api_veterinaria.Models.Responses;
 public class VeterinariaHelper
 {
     private readonly VeterinariaDAO _veterinariaDAO;
-    private readonly HttpClient _httpClient;
 
     public VeterinariaHelper(IConfiguration configuration)
     {
@@ -16,7 +15,6 @@ public class VeterinariaHelper
         string connectionString = configuration.GetConnectionString("DefaultConnection") ?? "";
 
         _veterinariaDAO = new VeterinariaDAO(connectionString);
-        _httpClient = new HttpClient();
     }
 
     //  Personas
